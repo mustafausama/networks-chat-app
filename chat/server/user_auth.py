@@ -1,7 +1,7 @@
 import hashlib
 import secrets
-from exceptions import UserExistsException, UserNotFoundException, IncorrectPasswordException
-from db import DB
+from chat.common.exceptions import UserExistsException, UserNotFoundException, IncorrectPasswordException
+from chat.server.db import DB
 db = DB()
 class UserAuth:
     PEPPER = "pepperonipizza"
