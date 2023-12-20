@@ -8,3 +8,5 @@ class IncorrectPasswordException(Exception):
     pass
 class EmptyUsernameException(Exception):
     pass
+class WeakPasswordException(Exception):
+    pass

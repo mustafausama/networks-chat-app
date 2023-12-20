@@ -55,10 +55,18 @@ class peerMain:
                          if not username:
                               username = input("Please re-enter your username: ")
                      except EmptyUsernameException:
-                            response= "empty-null username" 
-                            break
+                         response= "empty-null-username" 
+                         break
 
                 password = input("password: ")
+                while True:
+                    try:
+                        if len(password) < 8:
+                            password = input("Please choose a strong password that's 8 characters atleast")
+                    except WeakPasswordException:
+                        response = "weak-password"
+                
+                    
                 self.createAccount(username, password)
             # if choice is 2 and user is not logged in, asks for the username
             # and the password to login
