@@ -50,21 +50,14 @@ class peerMain:
             
             if choice == "1":
                 username = input("username: ")
-                while True:
-                     try:
-                         if not username:
-                              username = input("Please re-enter your username: ")
-                     except EmptyUsernameException:
-                         response= "empty-null-username" 
-                         break
+                while not username:
+                    username = input("Please enter a valid username: ")
+                   
 
                 password = input("password: ")
-                while True:
-                    try:
-                        if len(password) < 8:
-                            password = input("Please choose a strong password that's 8 characters atleast")
-                    except WeakPasswordException:
-                        response = "weak-password"
+                while len(password) < 8:
+                     password = input("Please choose a strong password that's 8 characters atleast")
+                   
                 
                     
                 self.createAccount(username, password)
@@ -73,6 +66,9 @@ class peerMain:
             elif choice is "2" and not self.isOnline:
                 username = input("username: ")
                 password = input("password: ")
+                while not password:
+                    password = input("this field must be filled:")
+                    
                 # asks for the port number for server's tcp socket
                 peerServerPort = int(input("Enter a port number for peer server: "))
                 

@@ -10,3 +10,5 @@ class EmptyUsernameException(Exception):
     pass
 class WeakPasswordException(Exception):
     pass
+class EmptyPasswordException(Exception):
+    pass
