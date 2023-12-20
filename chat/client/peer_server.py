@@ -93,7 +93,7 @@ class PeerServer(threading.Thread):
                                 # parses the message
                                 messageReceived = messageReceived.split()
                                 # gets the port of the peer that sends the chat request message
-                             
+                                self.connectedPeerPort = int(messageReceived[1])
                                 # gets the username of the peer sends the chat request message
                                 self.chattingClientName = messageReceived[2]
                                 # prints prompt for the incoming chat request

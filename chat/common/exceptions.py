@@ -6,9 +6,3 @@ class UserNotFoundException(Exception):
 
 class IncorrectPasswordException(Exception):
     pass
-class EmptyUsernameException(Exception):
-    pass
-class WeakPasswordException(Exception):
-    pass
-class EmptyPasswordException(Exception):
-    pass
