@@ -6,3 +6,5 @@ class UserNotFoundException(Exception):
 
 class IncorrectPasswordException(Exception):
     pass
+class EmptyUsernameException(Exception):
+    pass

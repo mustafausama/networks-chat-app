@@ -6,6 +6,7 @@ import select
 import logging
 from peer_server import *
 from peer_client import *
+from chat.common.exceptions import *
 
 
 class peerMain:
@@ -46,10 +47,18 @@ class peerMain:
             choice = input("Choose: \nCreate account: 1\nLogin: 2\nLogout: 3\nStart a chat: 4\n")
             # if choice is 1, creates an account with the username
             # and password entered by the user
-            if choice is "1":
+            
+            if choice == "1":
                 username = input("username: ")
+                while True:
+                     try:
+                         if not username:
+                              username = input("Please re-enter your username: ")
+                     except EmptyUsernameException:
+                            response= "empty-null username" 
+                            break
+
                 password = input("password: ")
-                
                 self.createAccount(username, password)
             # if choice is 2 and user is not logged in, asks for the username
             # and the password to login
