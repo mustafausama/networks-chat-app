@@ -4,6 +4,7 @@ import threading
 import time
 import select
 import logging
+import getpass
 from peer_server import *
 from peer_client import *
 from chat.common.exceptions import *
@@ -20,9 +21,11 @@ class peerMain:
         self.registryPort = 15600
         # tcp socket connection to registry
         self.tcpClientSocket = socket(AF_INET, SOCK_STREAM)
+        self.tcpClientSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         self.tcpClientSocket.connect((self.registryName,self.registryPort))
         # initializes udp socket which is used to send hello messages
         self.udpClientSocket = socket(AF_INET, SOCK_DGRAM)
+        self.udpClientSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         # udp port of the registry
         self.registryUDPPort = 15500
         # login info of the peer
@@ -54,9 +57,9 @@ class peerMain:
                     username = input("Please enter a valid username: ")
                    
 
-                password = input("password: ")
+                password = getpass.getpass("password: ")
                 while len(password) < 8:
-                     password = input("Please choose a strong password that's 8 characters atleast")
+                     password = getpass.getpass("Please choose a strong password that's 8 characters atleast")
                    
                 
                     
@@ -65,14 +68,14 @@ class peerMain:
             # and the password to login
             elif choice is "2" and not self.isOnline:
                 username = input("username: ")
-                password = input("password: ")
+                password = getpass.getpass("password: ")
                 while not password:
-                    password = input("this field must be filled:")
+                    password = getpass.getpass("this field must be filled:")
                     
                 # asks for the port number for server's tcp socket
                 peerServerPort = int(input("Enter a port number for peer server: "))
                 
-                status = self.login(username, password, peerServerPort)
+                status, payload = self.login(username, password, peerServerPort)
                 # is user logs in successfully, peer variables are set
                 if status is 1:
                     self.isOnline = True
@@ -82,7 +85,7 @@ class peerMain:
                     self.peerServer = PeerServer(self.loginCredentials[0], self.peerServerPort)
                     self.peerServer.start()
                     # hello message is sent to registry
-                    self.sendHelloMessage()
+                    self.sendHelloMessage(payload)
             # if choice is 3 and user is logged in, then user is logged out
             # and peer variables are set, and server and client sockets are closed
             elif choice is "3" and self.isOnline:
@@ -164,18 +167,18 @@ class peerMain:
         self.tcpClientSocket.send(message.encode())
         response = self.tcpClientSocket.recv(1024).decode()
         logging.info("Received from " + self.registryName + " -> " + response)
-        if response == "login-success":
+        if response.startswith("login-success"):
             print("Logged in successfully...")
-            return 1
+            return 1, response.split()[1]
         elif response == "login-account-not-exist":
             print("Account does not exist...")
-            return 0
+            return 0, ""
         elif response == "login-online":
             print("Account is already online...")
-            return 2
+            return 2, ""
         elif response == "login-wrong-password":
             print("Wrong password...")
-            return 3
+            return 3, ""
     
     # logout function
     def logout(self, option):
@@ -212,11 +215,11 @@ class peerMain:
     
     # function for sending hello message
     # a timer thread is used to send hello messages to udp socket of registry
-    def sendHelloMessage(self):
-        message = "HELLO " + self.loginCredentials[0]
+    def sendHelloMessage(self, payload):
+        message = f"HELLO {self.loginCredentials[0]} {payload}"
         logging.info("Send to " + self.registryName + ":" + str(self.registryUDPPort) + " -> " + message)
         self.udpClientSocket.sendto(message.encode(), (self.registryName, self.registryUDPPort))
-        self.timer = threading.Timer(1, self.sendHelloMessage)
+        self.timer = threading.Timer(1, self.sendHelloMessage, [payload])
         self.timer.start()
 
 # peer is started

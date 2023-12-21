@@ -25,7 +25,12 @@ class ClientThread(threading.Thread):
         
         while True:
             try:
-                message = self.tcpClientSocket.recv(1024).decode().split()
+                try:
+                    message = self.tcpClientSocket.recv(1024).decode().split()
+                except:
+                    logging.error("TCP Client error")
+                    break
+
                 logging.info("Received from " + self.ip + ":" + str(self.port) + " -> " + " ".join(message))            
                 if not message: continue
                 if message[0] == "JOIN":
@@ -41,7 +46,7 @@ class ClientThread(threading.Thread):
                 elif message[0] == "LOGIN":
                     try:
                         UserAuth.login(message[1], message[2])
-                        if (self.ip, self.port) in self.server_context.onlinePeers:
+                        if (self.ip, self.port) in self.server_context.onlinePeers or message[1] in self.server_context.tcpThreads:
                             response = 'login-online'
                         else:
                             self.username = message[1]
@@ -67,6 +72,10 @@ class ClientThread(threading.Thread):
 
                 elif message[0] == "LOGOUT":
                     self.lock.acquire()
+                    print(self.ip + ":" + str(self.port) + " is logged out")
+                    self.tcpClientSocket.close()
+                    if self.udpServer and self.udpServer.timer:
+                        self.udpServer.timer.cancel()
                     try:
                         if self.username in self.server_context.tcpThreads:
                             del self.server_context.tcpThreads[self.username]
@@ -74,14 +83,11 @@ class ClientThread(threading.Thread):
                             del self.server_context.onlinePeers[(self.ip, self.port)]
                     finally:
                         self.lock.release()
-                    print(self.ip + ":" + str(self.port) + " is logged out")
-                    self.tcpClientSocket.close()
-                    if self.udpServer and self.udpServer.timer:
-                        self.udpServer.timer.cancel()
+                    print("Logged out")
                     break
             except OSError as oErr:
                 logging.error("OSError: {0}".format(oErr)) 
-
+        del self
 
     def resetTimeout(self):
         self.udpServer.resetTimer()

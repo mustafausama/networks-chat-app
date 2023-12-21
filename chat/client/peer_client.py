@@ -20,6 +20,7 @@ class PeerClient(threading.Thread):
         self.portToConnect = portToConnect
         # client side tcp socket initialization
         self.tcpClientSocket = socket(AF_INET, SOCK_STREAM)
+        self.tcpClientSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         # keeps the server of this client
         self.peerServer = peerServer
         # keeps the phrase that is used when creating the client

@@ -15,6 +15,7 @@ class PeerServer(threading.Thread):
         self.username = username
         # tcp socket for peer server
         self.tcpServerSocket = socket(AF_INET, SOCK_STREAM)
+        self.tcpServerSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         # port number of the peer server
         self.peerServerPort = peerServerPort
         # if 1, then user is already chatting with someone
