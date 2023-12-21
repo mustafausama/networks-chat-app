@@ -2,10 +2,13 @@ import hashlib
 import secrets
 from chat.common.exceptions import UserExistsException, UserNotFoundException, IncorrectPasswordException
 from chat.server.db import DB
+
 db = DB()
+
+
 class UserAuth:
     PEPPER = "pepperonipizza"
-    
+
     @staticmethod
     def _hash_password(password, salt):
         # Hash the password using SHA-256 with salt and pepper
@@ -27,7 +30,7 @@ class UserAuth:
 
         # Register the user
         db.register(username, hashed_password, salt)
-    
+
     @staticmethod
     def login(username, password):
         # Check if the username exists
