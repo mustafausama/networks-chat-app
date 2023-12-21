@@ -3,6 +3,7 @@ import logging
 from .user_auth import UserAuth
 from chat.common.exceptions import UserExistsException, UserNotFoundException, IncorrectPasswordException
 from .udp_server import UDPServer
+from chat.common.utils import sendTCPMessage, receiveTCPMessage
 
 class ClientThread(threading.Thread):
     def __init__(self, ip, port, tcpClientSocket, server_context):
@@ -26,7 +27,7 @@ class ClientThread(threading.Thread):
         while True:
             try:
                 try:
-                    message = self.tcpClientSocket.recv(1024).decode().split()
+                    message = receiveTCPMessage(self.tcpClientSocket).split()
                 except:
                     logging.error("TCP Client error")
                     break
@@ -41,7 +42,7 @@ class ClientThread(threading.Thread):
                         response = "join-exist"
                     except Exception:
                         response = "server-error"
-                    self.tcpClientSocket.send(response.encode())
+                    sendTCPMessage(self.tcpClientSocket, response)
 
                 elif message[0] == "LOGIN":
                     try:
@@ -64,7 +65,7 @@ class ClientThread(threading.Thread):
                     except Exception:
                         response = "server-error"
 
-                    self.tcpClientSocket.send(response.encode())
+                    sendTCPMessage(self.tcpClientSocket, response)
                     if response.startswith('login-success'):
                         self.udpServer = UDPServer(self.username, self.tcpClientSocket, self.server_context)
                         self.udpServer.start()

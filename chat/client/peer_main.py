@@ -1,33 +1,84 @@
-
 from socket import *
 import threading
-import time
-import select
 import logging
 import getpass
-from peer_server import *
-from peer_client import *
+from .peer_server import *
+from .peer_client import *
 from chat.common.exceptions import *
+from chat.common.utils import sendTCPMessage, receiveTCPMessage, get_input
 
+def inputRegAddress(msg):
+    print(msg)
+    flag = False
+    while True:
+        if flag: print("Please enter a valid address formatted as (host:port): ")
+        else: flag = True
+        regAddress = get_input()
+        if not regAddress: continue
+        if len(regAddress.split(":")) != 2: continue
+        host, port = regAddress.split(":")
+        if not host.replace(".", "").isdigit(): continue
+        if len(host.split(".")) != 4: continue
+        for i in host.split("."):
+            if int(i) > 255 or int(i) < 0: continue
+        if not port.isdigit(): continue
+        port = int(port)
+        if port > 65535 or port < 0: continue
+        break
+    return regAddress.split(":")[0], int(regAddress.split(":")[1])
 
-class peerMain:
+def inputUsername():
+    username = get_input("Username: ")
+    while not username:
+        username = input("Please enter a valid username: ")
+    return username
+
+def inputPassword():
+    password = getpass.getpass("Password: ")
+    while not password:
+        password = getpass.getpass("Password field must be filled: ")
+    return password
+
+def inputPortNumber():
+    portNumber = get_input("Enter a port number for peer server: ")
+    while not portNumber or not portNumber.isdigit() or int(portNumber) > 65535 or int(portNumber) < 0:
+        portNumber = get_input("Please enter a valid port number: ")
+    return int(portNumber)
+
+def createAccount(username, password, tcpClientSocket):
+    message = "JOIN " + username + " " + password
+    sendTCPMessage(tcpClientSocket, message)
+    response = receiveTCPMessage(tcpClientSocket)
+    return response
+
+def login(username, password, peerServerPort, tcpClientSocket):
+    message = "LOGIN " + username + " " + password + " " + str(peerServerPort)
+    sendTCPMessage(tcpClientSocket, message)
+    response = receiveTCPMessage(tcpClientSocket)
+
+    if response.startswith("login-success"):
+        return 1, response.split()[1]
+    elif response == "login-account-not-exist":
+        return 0, ""
+    elif response == "login-online":
+        return 2, ""
+    elif response == "login-wrong-password":
+        return 3, ""
+
+class PeerMain:
 
     # peer initializations
     def __init__(self):
-        # ip address of the registry
-        self.registryName = input("Enter IP address of registry: ")
-        #self.registryName = 'localhost'
-        # port number of the registry
-        self.registryPort = 15600
-        # tcp socket connection to registry
+        self.registryName, self.registryPort = inputRegAddress("Enter the registry TCP address (host:port): ")
+
         self.tcpClientSocket = socket(AF_INET, SOCK_STREAM)
         self.tcpClientSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         self.tcpClientSocket.connect((self.registryName,self.registryPort))
-        # initializes udp socket which is used to send hello messages
+
         self.udpClientSocket = socket(AF_INET, SOCK_DGRAM)
         self.udpClientSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-        # udp port of the registry
-        self.registryUDPPort = 15500
+
+        _, self.registryUDPPort = inputRegAddress("Enter the registry UDP address (host:port): ")
         # login info of the peer
         self.loginCredentials = (None, None)
         # online status of the peer
@@ -40,44 +91,35 @@ class peerMain:
         self.peerClient = None
         # timer initialization
         self.timer = None
-        
+    
+    def mainLoop(self):
         choice = "0"
         # log file initialization
         logging.basicConfig(filename="peer.log", level=logging.INFO)
         # as long as the user is not logged out, asks to select an option in the menu
         while choice != "3":
-            # menu selection prompt
-            choice = input("Choose: \nCreate account: 1\nLogin: 2\nLogout: 3\nStart a chat: 4\n")
-            # if choice is 1, creates an account with the username
-            # and password entered by the user
-            
-            if choice == "1":
-                username = input("username: ")
-                while not username:
-                    username = input("Please enter a valid username: ")
-                   
+            choice = get_input("Choose: \nCreate account: 1\nLogin: 2\nLogout: 3\nStart a chat: 4\n")
 
-                password = getpass.getpass("password: ")
-                while len(password) < 8:
-                     password = getpass.getpass("Please choose a strong password that's 8 characters atleast")
-                   
-                
-                    
-                self.createAccount(username, password)
-            # if choice is 2 and user is not logged in, asks for the username
-            # and the password to login
+            if choice == "1":
+                username = inputUsername()
+                password = inputPassword()
+                response = createAccount(username, password, self.tcpClientSocket)
+                if response == "join-success":
+                    print("Account created...")
+                elif response == "join-exist":
+                    print("choose another username or login...")
+
             elif choice is "2" and not self.isOnline:
-                username = input("username: ")
-                password = getpass.getpass("password: ")
-                while not password:
-                    password = getpass.getpass("this field must be filled:")
+                username = inputUsername()
+                password = inputPassword()
                     
                 # asks for the port number for server's tcp socket
-                peerServerPort = int(input("Enter a port number for peer server: "))
+                peerServerPort = inputPortNumber()
                 
-                status, payload = self.login(username, password, peerServerPort)
+                status, payload = login(username, password, peerServerPort, self.tcpClientSocket)
                 # is user logs in successfully, peer variables are set
                 if status is 1:
+                    print("Logged in successfully...")
                     self.isOnline = True
                     self.loginCredentials = (username, password)
                     self.peerServerPort = peerServerPort
@@ -86,6 +128,12 @@ class peerMain:
                     self.peerServer.start()
                     # hello message is sent to registry
                     self.sendHelloMessage(payload)
+                elif status is 0:
+                    print("Account does not exist...")
+                elif status is 2:
+                    print("Account is already online...")
+                elif status is 3:
+                    print("Wrong password...")
             # if choice is 3 and user is logged in, then user is logged out
             # and peer variables are set, and server and client sockets are closed
             elif choice is "3" and self.isOnline:
@@ -107,7 +155,7 @@ class peerMain:
             # if choice is 4 and user is online, then user is asked
             # to enter the username of the user that is wanted to be chatted
             elif choice is "4" and self.isOnline:
-                username = input("Enter the username of user to start chat: ")
+                username = get_input("Enter the username of user to start chat: ")
                 searchStatus = self.searchUser(username)
                 # if searched user is found, then its ip address and port number is retrieved
                 # and a client thread is created
@@ -143,42 +191,42 @@ class peerMain:
         if choice != "CANCEL":
             self.tcpClientSocket.close()
 
-    # account creation function
-    def createAccount(self, username, password):
-        # join message to create an account is composed and sent to registry
-        # if response is success then informs the user for account creation
-        # if response is exist then informs the user for account existence
-        message = "JOIN " + username + " " + password
-        logging.info("Send to " + self.registryName + ":" + str(self.registryPort) + " -> " + message)
-        self.tcpClientSocket.send(message.encode())
-        response = self.tcpClientSocket.recv(1024).decode()
-        logging.info("Received from " + self.registryName + " -> " + response)
-        if response == "join-success":
-            print("Account created...")
-        elif response == "join-exist":
-            print("choose another username or login...")
+    # # account creation function
+    # def createAccount(self, username, password):
+    #     # join message to create an account is composed and sent to registry
+    #     # if response is success then informs the user for account creation
+    #     # if response is exist then informs the user for account existence
+    #     message = "JOIN " + username + " " + password
+    #     logging.info("Send to " + self.registryName + ":" + str(self.registryPort) + " -> " + message)
+    #     self.tcpClientSocket.send(message.encode())
+    #     response = self.tcpClientSocket.recv(1024).decode()
+    #     logging.info("Received from " + self.registryName + " -> " + response)
+    #     if response == "join-success":
+    #         print("Account created...")
+    #     elif response == "join-exist":
+    #         print("choose another username or login...")
 
-    # login function
-    def login(self, username, password, peerServerPort):
-        # a login message is composed and sent to registry
-        # an integer is returned according to each response
-        message = "LOGIN " + username + " " + password + " " + str(peerServerPort)
-        logging.info("Send to " + self.registryName + ":" + str(self.registryPort) + " -> " + message)
-        self.tcpClientSocket.send(message.encode())
-        response = self.tcpClientSocket.recv(1024).decode()
-        logging.info("Received from " + self.registryName + " -> " + response)
-        if response.startswith("login-success"):
-            print("Logged in successfully...")
-            return 1, response.split()[1]
-        elif response == "login-account-not-exist":
-            print("Account does not exist...")
-            return 0, ""
-        elif response == "login-online":
-            print("Account is already online...")
-            return 2, ""
-        elif response == "login-wrong-password":
-            print("Wrong password...")
-            return 3, ""
+    # # login function
+    # def login(self, username, password, peerServerPort):
+    #     # a login message is composed and sent to registry
+    #     # an integer is returned according to each response
+    #     message = "LOGIN " + username + " " + password + " " + str(peerServerPort)
+    #     logging.info("Send to " + self.registryName + ":" + str(self.registryPort) + " -> " + message)
+    #     self.tcpClientSocket.send(message.encode())
+    #     response = self.tcpClientSocket.recv(1024).decode()
+    #     logging.info("Received from " + self.registryName + " -> " + response)
+    #     if response.startswith("login-success"):
+    #         print("Logged in successfully...")
+    #         return 1, response.split()[1]
+    #     elif response == "login-account-not-exist":
+    #         print("Account does not exist...")
+    #         return 0, ""
+    #     elif response == "login-online":
+    #         print("Account is already online...")
+    #         return 2, ""
+    #     elif response == "login-wrong-password":
+    #         print("Wrong password...")
+    #         return 3, ""
     
     # logout function
     def logout(self, option):
@@ -221,6 +269,3 @@ class peerMain:
         self.udpClientSocket.sendto(message.encode(), (self.registryName, self.registryUDPPort))
         self.timer = threading.Timer(1, self.sendHelloMessage, [payload])
         self.timer.start()
-
-# peer is started
-main = peerMain()
