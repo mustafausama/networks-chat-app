@@ -25,6 +25,10 @@ If you have docker installed on your system. You can run the following command a
 3. Install the project  
 `pip install .`
 
+# Testing the application
+You can test the application by running the command  
+`python -m unittest discover tests`
+
 # Running the applications
 Open two terminals where the current virtual environment is activated.
 ## Activating the venv
@@ -34,4 +38,4 @@ Open two terminals where the current virtual environment is activated.
 ## Running the registry
 You can run the registry using the command `python chat/registry.py`
 ## Running a client app
-You can run a client using the command `python chat/cleint/peer_main.py`
+You can run a client using the command `python chat/peer.py`
