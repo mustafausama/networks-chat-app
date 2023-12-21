@@ -22,4 +22,5 @@ def receiveTCPMessage(tcpClientSocket):
     return message
 
 def get_input(msg=""):
-    return input(msg)
+    if msg: print(msg, end="")
+    return input()

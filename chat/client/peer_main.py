@@ -30,7 +30,7 @@ def inputRegAddress(msg):
 def inputUsername():
     username = get_input("Username: ")
     while not username:
-        username = input("Please enter a valid username: ")
+        username = get_input("Please enter a valid username: ")
     return username
 
 def inputPassword():
