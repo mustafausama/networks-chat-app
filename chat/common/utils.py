@@ -13,3 +13,13 @@ def find_available_port(hostname, start_port, end_port):
                 continue
             else:
                 raise
+
+def sendTCPMessage(tcpClientSocket, message):
+    tcpClientSocket.send(message.encode())
+
+def receiveTCPMessage(tcpClientSocket):
+    message = tcpClientSocket.recv(1024).decode()
+    return message
+
+def get_input(msg=""):
+    return input(msg)
