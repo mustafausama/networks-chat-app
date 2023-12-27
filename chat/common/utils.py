@@ -35,8 +35,7 @@ def get_hostname():
     try:
         res = socket.gethostbyname(hostname)
     except socket.gaierror:
-        import netifaces as ni
-        res = ni.ifaddresses('en0')[ni.AF_INET][0]['addr']
+        raise ValueError("Hostname %s could not be resolved" % hostname)
     return res
 
 

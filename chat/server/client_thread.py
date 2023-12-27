@@ -3,7 +3,7 @@ import logging
 from .user_auth import UserAuth
 from chat.common.exceptions import UserExistsException, UserNotFoundException, IncorrectPasswordException
 from .udp_server import UDPServer
-from chat.common.utils import sendTCPMessage, receiveTCPMessage
+from chat.common.utils import sendTCPMessage, receiveTCPMessage, generate_random_secret
 import socket
 
 class ClientThread(threading.Thread):
@@ -64,7 +64,8 @@ class ClientThread(threading.Thread):
                                 # self.server_context.onlinePeers[(self.ip, self.port)] = (self.username, message[3])
                             finally:
                                 self.lock.release()
-                            response = f"login-success {self.ip}:{self.port}"
+                            self.token = generate_random_secret()
+                            response = f"login-success {self.token}"
                     except UserNotFoundException:
                         response = "login-account-not-exist"
                     except IncorrectPasswordException:
@@ -141,7 +142,6 @@ class ClientThread(threading.Thread):
                         # inform all the peers in the room that a new peer has joined through the tcp_socket of each of them
                         for username, (tcp_sock, udp_addr) in self.server_context.chatRooms[message[1]].items():
                             if username != self.username:
-                                print("Sending 'JOINED " + self.username + " " + self.peerUdpAddress[0] + ":" + str(self.peerUdpAddress[1]) + "' to " + username + " at " + str(udp_addr) + "...")
                                 sendTCPMessage(tcp_sock, f"JOINED {self.username} {self.peerUdpAddress[0]}:{str(self.peerUdpAddress[1])}")
                                 response += f" {username}:{udp_addr[0]}:{udp_addr[1]}"
                     sendTCPMessage(self.tcpClientSocket, response)

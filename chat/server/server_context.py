@@ -1,7 +1,6 @@
 import socket, select, logging
 from .client_thread import ClientThread
-from chat.common.utils import find_available_port
-from chat.common.exceptions import RoomAlreadyExistsException
+from chat.common.utils import find_available_port, get_hostname
 
 def handle_new_TCP_connection(tcp_socket: socket.SocketType, server_context):
     tcpClientSocket, addr = tcp_socket.accept()
@@ -16,23 +15,17 @@ def handle_UDP_message(udp_socket: socket.SocketType, server_context):
         # checks if the account that this hello message 
         # is sent from is online
         username = message[1]
-        ip, port = message[2].split(":")
+        token = message[2]
         # if username in server_context.tcpThreads and (ip, int(port)) in server_context.onlinePeers:
-        if username in server_context.tcpThreads and server_context.tcpThreads[username].ip == ip and server_context.tcpThreads[username].port == int(port):
+        if username in server_context.tcpThreads and server_context.tcpThreads[username].token == token:
             server_context.tcpThreads[username].resetTimeout()
-            print("Adding " + username + " to online peers with address " + str(clientAddress) + "...")
-            server_context.tcpThreads[username].peerUdpAddress = clientAddress
-            # print("=== Hello is received from " + username)
-            # logging.info("Received from " + clientAddress[0] + ":" + str(clientAddress[1]) + " -> " + " ".join(message))
+            if server_context.tcpThreads[username].peerUdpAddress != clientAddress:
+                server_context.tcpThreads[username].peerUdpAddress = clientAddress
 
 class ServerContext:
     PORT_BASE = 15500
     def __init__(self) -> None:
-        hostname = socket.gethostname()
-        try:
-            self.host = socket.gethostbyname(hostname)
-        except socket.gaierror:
-            raise ValueError("Hostname %s could not be resolved" % hostname)
+        self.host = get_hostname()
 
 
         self.tcp_port = find_available_port(self.host, ServerContext.PORT_BASE+100, ServerContext.PORT_BASE+200)

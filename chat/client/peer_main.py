@@ -71,9 +71,7 @@ class PeerMain:
 
     # peer initializations
     def __init__(self):
-        # self.registryName, self.registryPort = inputRegAddress("Enter the registry TCP address (host:port): ")
-        # DEUBG
-        self.registryName = '172.16.0.2'
+        self.registryName, self.registryPort = inputRegAddress("Enter the registry TCP address (host:port): ")
         self.registryPort = 15600
         self.tcpClientSocket = socket(AF_INET, SOCK_STREAM)
         self.tcpClientSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
@@ -83,9 +81,7 @@ class PeerMain:
         self.udpClientSocket = socket(AF_INET, SOCK_DGRAM)
         self.udpClientSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 
-        # _, self.registryUDPPort = inputRegAddress("Enter the registry UDP address (host:port): ")
-        # DEUBG
-        self.registryUDPPort = 15500
+        _, self.registryUDPPort = inputRegAddress("Enter the registry UDP address (host:port): ")
         self.loginCredentials = (None, None)
         self.isOnline = False
         self.peerServerPort = None
@@ -129,9 +125,7 @@ Join a chat room: 8\n")
 
             elif choice is "2" and not self.isOnline:
                 username = inputUsername()
-                # password = inputPassword()
-                # DEUBG
-                password = '1234'
+                password = inputPassword()
                 peerServerHost = get_hostname()
                 peerServerPort = inputPortNumber()
                 
@@ -143,7 +137,7 @@ Join a chat room: 8\n")
                     self.loginCredentials = (username, password)
                     self.peerServerPort = peerServerPort
                     # creates the server thread for this peer, and runs it
-                    self.peerServer = PeerServer(self.loginCredentials[0], self.peerServerPort)
+                    self.peerServer = PeerServer(self.loginCredentials[0], self.peerServerPort, self)
                     self.peerServer.start()
                     # hello message is sent to registry
                     self.sendHelloMessage(payload)
@@ -264,6 +258,7 @@ Join a chat room: 8\n")
                         self.tcpClientSocket.send(f"LEAVE-ROOM {room_name}".encode())
                         room.stop_threads()
                         self.isInChatRoom = False
+                        self.online_room_peers.clear()
                         print("Left "+room_name+" chat room...")
 
                     elif response[0] == "room-not-found":

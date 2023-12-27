@@ -9,7 +9,7 @@ class PeerServer(threading.Thread):
 
 
     # Peer server initialization
-    def __init__(self, username, peerServerPort):
+    def __init__(self, username, peerServerPort, main_context):
         threading.Thread.__init__(self)
         # keeps the username of the peer
         self.username = username
@@ -41,11 +41,7 @@ class PeerServer(threading.Thread):
         # first checks to get it for windows devices
         # if the device that runs this application is not windows
         # it checks to get it for macos devices
-        hostname=gethostname()
-        try:
-            self.peerServerHostname=gethostbyname(hostname)
-        except gaierror:
-            raise ValueError("Hostname %s could not be resolved" % hostname)
+        self.peerServerHostname=get_hostname()
 
         # ip address of this peer
         #self.peerServerHostname = 'localhost'
@@ -103,7 +99,7 @@ class PeerServer(threading.Thread):
                                 self.isChatRequested = 1
                             # if the socket that we received the data does not belong to the peer that we are chatting with
                             # and if the user is already chatting with someone else(isChatRequested = 1), then enters here
-                            elif s is not self.connectedPeerSocket and self.isChatRequested == 1:
+                            elif s is not self.connectedPeerSocket and (self.main_context.isInChatRoom or self.isChatRequested == 1):
                                 # sends a busy message to the peer that sends a chat request when this peer is 
                                 # already chatting with someone else
                                 message = "BUSY"
