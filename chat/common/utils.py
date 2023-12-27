@@ -1,18 +1,20 @@
 import socket
 
-def find_available_port(hostname, start_port, end_port):
-    for port in range(start_port, end_port):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
+def is_port_available(hostname, port, udp=False):
+    try:
+        # Attempt to create a socket and bind to the specified port
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) if not udp else socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.bind((hostname, port))
-            s.close()
+            return True  # Port is available
+    except:
+        return False  # Port is not available
+
+def find_available_port(hostname, start_port = 0, end_port = 65535, udp=False):
+    for port in range(start_port, end_port):
+        if is_port_available(hostname, port, udp):
             return port
-        except socket.error as e:
-            if e.errno == 98:  # errno 98 means Address already in use
-                continue
-            else:
-                raise
+
+
 
 def sendTCPMessage(tcpClientSocket, message):
     tcpClientSocket.send(message.encode())
@@ -24,3 +26,12 @@ def receiveTCPMessage(tcpClientSocket):
 def get_input(msg=""):
     if msg: print(msg, end="")
     return input()
+
+def get_hostname():
+    hostname=socket.gethostname()
+    try:
+        res = socket.gethostbyname(hostname)
+    except socket.gaierror:
+        import netifaces as ni
+        res = ni.ifaddresses('en0')[ni.AF_INET][0]['addr']
+    return res

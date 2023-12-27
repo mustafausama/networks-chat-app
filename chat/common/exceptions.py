@@ -6,3 +6,6 @@ class UserNotFoundException(Exception):
 
 class IncorrectPasswordException(Exception):
     pass
+
+class RoomAlreadyExistsException(Exception):
+    pass

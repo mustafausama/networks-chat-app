@@ -44,3 +44,11 @@ class UserAuth:
         # Check if the entered password matches the stored hashed password
         if hashed_password != user_data["hashed_password"]:
             raise IncorrectPasswordException("Incorrect password.")
+
+    @staticmethod
+    def fine_user(username):
+        user_data = db.is_account_exist(username)
+        if user_data is None:
+            return False
+        else:
+            return True

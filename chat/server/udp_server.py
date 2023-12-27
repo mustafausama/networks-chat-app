@@ -21,8 +21,8 @@ class UDPServer(threading.Thread):
             if self.username in self.server_context.tcpThreads:
                 self.server_context.tcpThreads[self.username].udpServer = None
                 del self.server_context.tcpThreads[self.username]
-            if (self.tcpClientSocket.getsockname()[0], self.tcpClientSocket.getsockname()[1]) in self.server_context.onlinePeers:
-                del self.server_context.onlinePeers[(self.tcpClientSocket.getsockname()[0], self.tcpClientSocket.getsockname()[1])]
+            # if (self.tcpClientSocket.getsockname()[0], self.tcpClientSocket.getsockname()[1]) in self.server_context.onlinePeers:
+            #     del self.server_context.onlinePeers[(self.tcpClientSocket.getsockname()[0], self.tcpClientSocket.getsockname()[1])]
         finally:
             lock.release()
         self.tcpClientSocket.close()
@@ -30,7 +30,7 @@ class UDPServer(threading.Thread):
 
     # resets the timer for udp server
     def resetTimer(self):
-        print("Resetting timer for " + self.username)
+        # print("Resetting timer for " + self.username)
         self.timer.cancel()
         self.timer = threading.Timer(3, self.waitHelloMessage)
         self.timer.start()

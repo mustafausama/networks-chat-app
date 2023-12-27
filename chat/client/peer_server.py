@@ -3,7 +3,7 @@ import threading
 import time
 import select
 import logging
-
+from chat.common.utils import get_hostname
 # Server side of peer
 class PeerServer(threading.Thread):
 
@@ -15,7 +15,6 @@ class PeerServer(threading.Thread):
         self.username = username
         # tcp socket for peer server
         self.tcpServerSocket = socket(AF_INET, SOCK_STREAM)
-        self.tcpServerSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         # port number of the peer server
         self.peerServerPort = peerServerPort
         # if 1, then user is already chatting with someone
@@ -46,12 +45,12 @@ class PeerServer(threading.Thread):
         try:
             self.peerServerHostname=gethostbyname(hostname)
         except gaierror:
-            import netifaces as ni
-            self.peerServerHostname = ni.ifaddresses('en0')[ni.AF_INET][0]['addr']
+            raise ValueError("Hostname %s could not be resolved" % hostname)
 
         # ip address of this peer
         #self.peerServerHostname = 'localhost'
         # socket initializations for the server of the peer
+        print("Binding to " + self.peerServerHostname + ":" + str(self.peerServerPort))
         self.tcpServerSocket.bind((self.peerServerHostname, self.peerServerPort))
         self.tcpServerSocket.listen(4)
         # inputs sockets that should be listened

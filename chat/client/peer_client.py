@@ -20,7 +20,6 @@ class PeerClient(threading.Thread):
         self.portToConnect = portToConnect
         # client side tcp socket initialization
         self.tcpClientSocket = socket(AF_INET, SOCK_STREAM)
-        self.tcpClientSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         # keeps the server of this client
         self.peerServer = peerServer
         # keeps the phrase that is used when creating the client
@@ -33,8 +32,7 @@ class PeerClient(threading.Thread):
 
     # main method of the peer client thread
     def run(self):
-        print("Peer client started...")
-        # connects to the server of other peer
+        print("Peer client started...", (self.ipToConnect, self.portToConnect))
         self.tcpClientSocket.connect((self.ipToConnect, self.portToConnect))
         # if the server of this peer is not connected by someone else and if this is the requester side peer client then enters here
         if self.peerServer.isChatRequested == 0 and self.responseReceived is None:

@@ -6,7 +6,6 @@ authors = ["Mustafa U. Abdelrahman <mustafausama@outlook.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-netifaces = "^0.11.0"
 pymongo = "^4.6.1"
 
 
