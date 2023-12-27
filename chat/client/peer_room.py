@@ -1,4 +1,4 @@
-from chat.common.utils import receiveTCPMessage
+from chat.common.utils import receiveTCPMessage, print_colored_text, format_text
 import logging
 import select
 import threading
@@ -18,19 +18,18 @@ class PeerRoom:
                     logging.error("TCP Client error")
                     break
                 if(message[0] == 'room-left'):
-                    print("You left the room.")
+                    print_colored_text("You left the room.", 'red')
                     break
                 logging.info("Received from " + str(main_context.tcpClientSocket) + " -> " + " ".join(message))
                 if not message:
                     continue
                 if message[0] == "JOINED":
-                    print("User " + message[1] + " joined the room from " + str((message[2].split(":")[0], int(message[2].split(":")[1]))) + ".")
+                    print_colored_text(message[1] + " joined the room from " + str((message[2].split(":")[0], int(message[2].split(":")[1]))) + ".", 'green')
                     main_context.online_room_peers[message[1]] = (message[2].split(":")[0], int(message[2].split(":")[1]))
-                    print(message[1] + " joined the room from " + str((message[2].split(":")[0], int(message[2].split(":")[1]))) + ".")
                 elif message[0] == "LEFT":
                     if message[1] in main_context.online_room_peers:
                         del main_context.online_room_peers[message[1]]
-                    print(message[1] + " left the room.")
+                    print_colored_text(message[1] + " left the room.", 'yellow')
             except OSError as oErr:
                 logging.error("OSError: {0}".format(oErr))
 
@@ -54,7 +53,8 @@ class PeerRoom:
                     message_content = " ".join(temp[1:])
                     if username not in main_context.online_room_peers:
                         main_context.online_room_peers[username] = clientAddress
-                    print(username + ": " + message_content)
+                    print_colored_text(username + ': ', 'cyan', end='')
+                    print(format_text(message_content))
 
     def start_threads(self):
         self.roomTCPThread.start()
