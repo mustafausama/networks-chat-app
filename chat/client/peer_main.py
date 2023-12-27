@@ -7,7 +7,7 @@ from .peer_client import *
 from chat.common.exceptions import *
 from chat.common.utils import sendTCPMessage, receiveTCPMessage, get_input, get_hostname, find_available_port
 from threading import Thread
-from .peer_room import handle_udp_chat_room, handle_tcp_chat_room, broadcast_message
+from .peer_room import PeerRoom, broadcast_message
 
 def inputRegAddress(msg):
     print(msg)
@@ -67,11 +67,6 @@ def login(username, password, peerServerAddress, tcpClientSocket):
     elif response == "login-wrong-password":
         return 3, ""
 
-def generate_random_secret():
-    import random
-    import string
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
-
 class PeerMain:
 
     # peer initializations
@@ -83,6 +78,7 @@ class PeerMain:
         self.tcpClientSocket = socket(AF_INET, SOCK_STREAM)
         self.tcpClientSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         self.tcpClientSocket.connect((self.registryName,self.registryPort))
+        # self.tcpClientSocket.listen(5)
 
         self.udpClientSocket = socket(AF_INET, SOCK_DGRAM)
         self.udpClientSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
@@ -245,33 +241,19 @@ Join a chat room: 8\n")
                     room_name = get_input("Enter the name of the chat room: ")
                     while not room_name:
                         room_name = get_input("Please enter a valid name for the chat room: ")
-                    hostname = get_hostname()
-                    tcp_port = find_available_port(hostname, 20000, 30000)
-                    udp_port = find_available_port(hostname, 30000, 40000, True)
-                    secret = generate_random_secret()
-                    message = f"JOIN-ROOM {room_name} {hostname}:{tcp_port} {hostname}:{udp_port} {secret}"
+                    message = f"JOIN-ROOM {room_name}"
                     print("Message: "+message)
-                    self.roomTCPSocket = socket(AF_INET, SOCK_STREAM)
-                    self.roomTCPSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-                    self.roomTCPSocket.bind((hostname, tcp_port))
-                    self.roomTCPSocket.listen(5)
-                    print("TCP socket at " + hostname + ":" + str(tcp_port) + " is listening...")
-                    self.roomUDPSocket = socket(AF_INET, SOCK_DGRAM)
-                    self.roomUDPSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-                    self.roomUDPSocket.bind((hostname, udp_port))
-                    print("UDP socket at " + hostname + ":" + str(udp_port) + " is listening...")
-                    self.roomTCPThread = Thread(target=handle_tcp_chat_room, args=(self, secret))
-                    self.roomUDPThread = Thread(target=handle_udp_chat_room, args=(self,))
-                    self.roomTCPThread.start()
-                    self.roomUDPThread.start()
                     self.tcpClientSocket.send(message.encode())
                     response = self.tcpClientSocket.recv(1024).decode().split()
+                    room = PeerRoom(self)
+                    room.start_threads()
                     if response[0] == "room-joined":
                         self.isInChatRoom = True
                         # add the peers in the chat room to the online_room_peers
                         print("Online peers in " + room_name + ": " + str(response[1:]) + "\n")
                         for peer in response[1:]:
                             username, addressIP, addressPort = peer.split(":")
+                            print("User " + username + " joined the room from " + str((addressIP, int(addressPort))) + ".")
                             self.online_room_peers[username] = (addressIP, int(addressPort))
                         print("Joined "+room_name+" chat room...")
                         userMessage = get_input()
@@ -280,8 +262,7 @@ Join a chat room: 8\n")
                             userMessage = get_input()
                         # send LEAVE-ROOM
                         self.tcpClientSocket.send(f"LEAVE-ROOM {room_name}".encode())
-                        self.roomTCPSocket.close()
-                        self.roomUDPSocket.close()
+                        room.stop_threads()
                         self.isInChatRoom = False
                         print("Left "+room_name+" chat room...")
 

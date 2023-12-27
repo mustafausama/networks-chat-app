@@ -20,6 +20,8 @@ def handle_UDP_message(udp_socket: socket.SocketType, server_context):
         # if username in server_context.tcpThreads and (ip, int(port)) in server_context.onlinePeers:
         if username in server_context.tcpThreads and server_context.tcpThreads[username].ip == ip and server_context.tcpThreads[username].port == int(port):
             server_context.tcpThreads[username].resetTimeout()
+            print("Adding " + username + " to online peers with address " + str(clientAddress) + "...")
+            server_context.tcpThreads[username].peerUdpAddress = clientAddress
             # print("=== Hello is received from " + username)
             # logging.info("Received from " + clientAddress[0] + ":" + str(clientAddress[1]) + " -> " + " ".join(message))
 

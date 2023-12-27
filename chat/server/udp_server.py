@@ -20,9 +20,8 @@ class UDPServer(threading.Thread):
         try:
             if self.username in self.server_context.tcpThreads:
                 self.server_context.tcpThreads[self.username].udpServer = None
+                self.server_context.tcpThreads[self.username].leave_all_rooms()
                 del self.server_context.tcpThreads[self.username]
-            # if (self.tcpClientSocket.getsockname()[0], self.tcpClientSocket.getsockname()[1]) in self.server_context.onlinePeers:
-            #     del self.server_context.onlinePeers[(self.tcpClientSocket.getsockname()[0], self.tcpClientSocket.getsockname()[1])]
         finally:
             lock.release()
         self.tcpClientSocket.close()

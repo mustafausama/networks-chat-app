@@ -20,6 +20,8 @@ class ClientThread(threading.Thread):
         self.server_context = server_context
         
         self.peerServerAddress = None
+        self.peerUdpAddress = None
+        self.online_in_rooms = set()
         
         print("New thread started for " + ip + ":" + str(port))
 
@@ -127,21 +129,10 @@ class ClientThread(threading.Thread):
                     if message[1] not in self.server_context.chatRooms:
                         response = 'room-not-found'
                     else:
-                        tcp_address = message[2]
-                        udp_address = message[3]
-                        secret = message[4]
-                        # establish tcp connection and send secret
-                        print("TCP socket at " + tcp_address + " is connecting...")
-                        print("UDP socket at " + udp_address + " is connecting...")
-                        tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                        tcp_socket.connect((tcp_address.split(':')[0], int(tcp_address.split(':')[1])))
-                        print("Sending secret to " + tcp_address + "...")
-                        sendTCPMessage(tcp_socket, secret)
-                        # store the tcp socket and the udp address
                         self.lock.acquire()
                         try:
-                            self.server_context.chatRooms[message[1]][self.username] = (tcp_socket, (udp_address.split(':')[0], int(udp_address.split(':')[1])))
+                            self.server_context.chatRooms[message[1]][self.username] = (self.tcpClientSocket, self.peerUdpAddress)
+                            self.online_in_rooms.add(message[1])
                         finally:
                             self.lock.release()
                         print("Online peers in " + message[1] + ": " + str(self.server_context.chatRooms[message[1]]) + "\n")
@@ -150,39 +141,36 @@ class ClientThread(threading.Thread):
                         # inform all the peers in the room that a new peer has joined through the tcp_socket of each of them
                         for username, (tcp_sock, udp_addr) in self.server_context.chatRooms[message[1]].items():
                             if username != self.username:
-                                sendTCPMessage(tcp_sock, f"JOINED {self.username} {udp_address}")
+                                print("Sending 'JOINED " + self.username + " " + self.peerUdpAddress[0] + ":" + str(self.peerUdpAddress[1]) + "' to " + username + " at " + str(udp_addr) + "...")
+                                sendTCPMessage(tcp_sock, f"JOINED {self.username} {self.peerUdpAddress[0]}:{str(self.peerUdpAddress[1])}")
                                 response += f" {username}:{udp_addr[0]}:{udp_addr[1]}"
-                        # for username in self.server_context.chatRooms[message[1]]:
-                        #     if username != self.username:
-                        #         udp_address = self.server_context.chatRooms[message[1]][username][1]
-                        #         message += f" {username}-{udp_address}"
-                        #         sendTCPMessage(tcp_socket, f"JOINED {self.username} {udp_address}")
-                        # for username, (tcp_socket, udp_address) in self.server_context.chatRooms[message[1]].items():
-                        #     if username != self.username:
-                        #         sendTCPMessage(tcp_socket, f"JOINED {self.username} {udp_address}")
                     sendTCPMessage(self.tcpClientSocket, response)
                 elif message[0] == 'LEAVE-ROOM':
                     room_name = message[1]
-                    if room_name not in self.server_context.chatRooms:
-                        response = 'room-not-found'
-                    elif self.username not in self.server_context.chatRooms[room_name]:
-                        response = 'room-not-joined'
-                    else:
-                        self.lock.acquire()
-                        try:
-                            del self.server_context.chatRooms[room_name][self.username]
-                        finally:
-                            self.lock.release()
-                        response = 'room-left'
-                        # inform all the peers in the room that a peer has left through the tcp_socket of each of them
-                        for username, (tcp_sock, udp_addr) in self.server_context.chatRooms[room_name].items():
-                            sendTCPMessage(tcp_sock, f"LEFT {self.username}")
+                    self.leave_room(room_name)
+                    sendTCPMessage(self.tcpClientSocket, f"room-left {room_name}")
             except OSError as oErr:
                 logging.error("OSError: {0}".format(oErr))
             except Exception as e:
                 print(e)
                 break
         del self
+    
+    def leave_room(self, room_name):
+        if room_name in self.online_in_rooms and room_name in self.server_context.chatRooms and self.username in self.server_context.chatRooms[room_name]:
+            self.lock.acquire()
+            try:
+                del self.server_context.chatRooms[room_name][self.username]
+                self.online_in_rooms.remove(room_name)
+            finally:
+                self.lock.release()
+            # inform all the peers in the room that a peer has left through the tcp_socket of each of them
+            for username, (tcp_sock, udp_addr) in self.server_context.chatRooms[room_name].items():
+                sendTCPMessage(tcp_sock, f"LEFT {self.username}")
+
+    def leave_all_rooms(self):
+        for room_name in list(self.online_in_rooms):
+            self.leave_room(room_name)
 
     def resetTimeout(self):
         self.udpServer.resetTimer()
