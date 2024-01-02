@@ -4,7 +4,6 @@ from .user_auth import UserAuth
 from chat.common.exceptions import UserExistsException, UserNotFoundException, IncorrectPasswordException
 from .udp_server import UDPServer
 from chat.common.utils import sendTCPMessage, receiveTCPMessage, generate_random_secret
-import socket
 
 class ClientThread(threading.Thread):
     def __init__(self, ip, port, tcpClientSocket, server_context):

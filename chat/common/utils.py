@@ -1,5 +1,7 @@
 import socket
 import re
+import sys
+
 
 def is_port_available(hostname, port, udp=False):
     try:
@@ -49,11 +51,13 @@ class FORMAT:
     GREEN = '\033[92m'
     YELLOW = '\033[93m'
     RED = '\033[91m'
+    GREY = '\033[90m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
     ITALIC = '\033[3m'
     STRIKETHROUGH = '\033[9m'
     END = '\033[0m'
+    LIGHT_RED = '\033[91m'
 
 def _frmt(c, text):
     if c == '*':
@@ -115,6 +119,10 @@ def print_colored_text(text, color: str = '', end='\n'):
         print(FORMAT.CYAN + text + FORMAT.END,end=end)
     elif color == 'purple':
         print(FORMAT.PURPLE + text + FORMAT.END,end=end)
+    elif color == 'grey':
+        print(FORMAT.GREY + text + FORMAT.END,end=end)
+    elif color == 'light_red':
+        print(FORMAT.LIGHT_RED + text + FORMAT.END,end=end)
     else:
         print(text, end = end)
 
@@ -122,4 +130,8 @@ def print_colored_text(text, color: str = '', end='\n'):
 def get_input(msg="", color=""):
     if msg: print_colored_text(msg, color, end='')
     return input()
+
+def clear_last_console_line():
+    sys.stdout.write('\x1b[1A')  # Move cursor up one line
+    sys.stdout.write('\x1b[2K')  # Clear the line
 

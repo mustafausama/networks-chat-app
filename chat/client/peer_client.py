@@ -5,8 +5,7 @@ import threading
 import time
 import select
 import logging
-
-
+from chat.common.utils import clear_last_console_line, print_colored_text, format_text
 # Client side of peer
 class PeerClient(threading.Thread):
     # variable initializations for the client side of the peer
@@ -60,7 +59,11 @@ class PeerClient(threading.Thread):
                 # as long as the server status is chatting, this client can send messages
                 while self.peerServer.isChatRequested == 1:
                     # message input prompt
-                    messageSent = input(self.username + ": ")
+                    messageSent = input()
+                    clear_last_console_line()
+                    print_colored_text(self.username+": ", 'green', end='')
+                    print(format_text(messageSent))
+
                     # sends the message to the connected peer, and logs it
                     self.tcpClientSocket.send(messageSent.encode())
                     logging.info("Send to " + self.ipToConnect + ":" + str(self.portToConnect) + " -> " + messageSent)
@@ -108,7 +111,10 @@ class PeerClient(threading.Thread):
             # client can send messsages as long as the server status is chatting
             while self.peerServer.isChatRequested == 1:
                 # input prompt for user to enter message
-                messageSent = input(self.username + ": ")
+                messageSent = input()
+                clear_last_console_line()
+                print_colored_text(self.username+": ", 'green', end='')
+                print(format_text(messageSent))
                 self.tcpClientSocket.send(messageSent.encode())
                 logging.info("Send to " + self.ipToConnect + ":" + str(self.portToConnect) + " -> " + messageSent)
                 # if a quit message is sent, server status is changed

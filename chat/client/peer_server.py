@@ -3,7 +3,7 @@ import threading
 import time
 import select
 import logging
-from chat.common.utils import get_hostname
+from chat.common.utils import get_hostname, print_colored_text, format_text
 # Server side of peer
 class PeerServer(threading.Thread):
 
@@ -30,6 +30,7 @@ class PeerServer(threading.Thread):
         self.isOnline = True
         # keeps the username of the peer that this peer is chatting with
         self.chattingClientName = None
+        self.main_context = main_context
     
 
     # main method of the peer server thread
@@ -68,8 +69,11 @@ class PeerServer(threading.Thread):
                         inputs.append(connected)
                         # if the user is not chatting, then the ip and the socket of
                         # this peer is assigned to server variables
-                        if self.isChatRequested == 0:     
-                            print(self.username + " is connected from " + str(addr))
+                        if self.isChatRequested == 0:
+                            if self.main_context.isInChatRoom:
+                                print_colored_text("Private message Rejection is sent to a user", 'grey')
+                            else:
+                                print_colored_text("Private chat connected from " + str(addr), 'grey')
                             self.connectedPeerSocket = connected
                             self.connectedPeerIP = addr[0]
                     # if the socket that receives the data is the one that
@@ -77,15 +81,19 @@ class PeerServer(threading.Thread):
                     else:
                         # message is received from connected peer
                         messageReceived = s.recv(1024).decode()
-                        # logs the received message
-                        logging.info("Received from " + str(self.connectedPeerIP) + " -> " + str(messageReceived))
                         # if message is a request message it means that this is the receiver side peer server
                         # so evaluate the chat request
                         if len(messageReceived) > 11 and messageReceived[:12] == "CHAT-REQUEST":
                             # text for proper input choices is printed however OK or REJECT is taken as input in main process of the peer
                             # if the socket that we received the data belongs to the peer that we are chatting with,
                             # enters here
-                            if s is self.connectedPeerSocket:
+
+                            # If the peer is in chat room, then it will not accept any chat request
+                            if s is self.connectedPeerSocket and self.main_context.isInChatRoom:
+                                message = "BUSY"
+                                s.send(message.encode())
+                                inputs.remove(s)
+                            elif s is self.connectedPeerSocket:
                                 # parses the message
                                 messageReceived = messageReceived.split()
                                 # gets the port of the peer that sends the chat request message
@@ -93,7 +101,7 @@ class PeerServer(threading.Thread):
                                 # gets the username of the peer sends the chat request message
                                 self.chattingClientName = messageReceived[2]
                                 # prints prompt for the incoming chat request
-                                print("Incoming chat request from " + self.chattingClientName + " >> ")
+                                print_colored_text("Incoming chat request from " + self.chattingClientName + " >> ", 'grey')
                                 print("Enter OK to accept or REJECT to reject:  ")
                                 # makes isChatRequested = 1 which means that peer is chatting with someone
                                 self.isChatRequested = 1
@@ -116,7 +124,9 @@ class PeerServer(threading.Thread):
                         # if a message is received, and if this is not a quit message ':q' and 
                         # if it is not an empty message, show this message to the user
                         elif messageReceived[:2] != ":q" and len(messageReceived)!= 0:
-                            print(self.chattingClientName + ": " + messageReceived)
+                            # print(self.chattingClientName + ": " + messageReceived)
+                            print_colored_text(self.chattingClientName + ': ', 'cyan', end='')
+                            print(format_text(messageReceived))
                         # if the message received is a quit message ':q',
                         # makes ischatrequested 1 to receive new incoming request messages
                         # removes the socket of the connected peer from the inputs list
@@ -126,16 +136,16 @@ class PeerServer(threading.Thread):
                             inputs.append(self.tcpServerSocket)
                             # connected peer ended the chat
                             if len(messageReceived) == 2:
-                                print("User you're chatting with ended the chat")
-                                print("Press enter to quit the chat: ")
+                                print_colored_text("User you're chatting with ended the chat", 'red')
+                                print_colored_text("Press enter to quit the chat: ", 'yellow')
                         # if the message is an empty one, then it means that the
                         # connected user suddenly ended the chat(an error occurred)
                         elif len(messageReceived) == 0:
                             self.isChatRequested = 0
                             inputs.clear()
                             inputs.append(self.tcpServerSocket)
-                            print("User you're chatting with suddenly ended the chat")
-                            print("Press enter to quit the chat: ")
+                            print_colored_text("User you're chatting with suddenly ended the chat", 'red')
+                            print_colored_text("Press enter to quit the chat: ", 'yellow')
             # handles the exceptions, and logs them
             except OSError as oErr:
                 logging.error("OSError: {0}".format(oErr))

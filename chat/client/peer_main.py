@@ -5,7 +5,7 @@ import getpass
 from .peer_server import *
 from .peer_client import *
 from chat.common.exceptions import *
-from chat.common.utils import sendTCPMessage, receiveTCPMessage, get_input, get_hostname, find_available_port, print_colored_text
+from chat.common.utils import sendTCPMessage, receiveTCPMessage, get_input, get_hostname, find_available_port, print_colored_text, format_text, clear_last_console_line
 from threading import Thread
 from .peer_room import PeerRoom, broadcast_message
 
@@ -40,12 +40,6 @@ def inputPassword():
     while not password:
         password = getpass.getpass("Password field must be filled: ")
     return password
-
-def inputPortNumber():
-    portNumber = get_input("Enter a port number for peer server: ", 'yellow')
-    while not portNumber or not portNumber.isdigit() or int(portNumber) > 65535 or int(portNumber) < 0:
-        portNumber = get_input("Please enter a valid port number: ", 'red')
-    return int(portNumber)
 
 def createAccount(username, password, tcpClientSocket):
     message = "JOIN " + username + " " + password
@@ -97,22 +91,30 @@ class PeerMain:
         self.roomUDPThread = None
         self.online_room_peers = {}
 
+    def print_coices_colored(self):
+        # Print the choices in different colors (each choice with a different color). All choices on one line. Check if the user is online or not.
+        # each choice with a different color
+        if not self.isOnline:
+            print_colored_text("You're not logged in.", 'red', end=' - ')
+            print_colored_text("Register (1)", 'green', end=' ')
+            print_colored_text("Login (2)", 'blue', end='\n')
+        else:
+            print_colored_text("You're logged in.", 'green', end=' - ')
+            print_colored_text("Logout (3)", 'red', end=' ')
+            print_colored_text("Online Users (4)", 'blue', end=' ')
+            print_colored_text("Private Chat (5)", 'yellow', end=' ')
+            print_colored_text("Create room (6)", 'cyan', end=' ')
+            print_colored_text("List rooms (7)", 'purple', end=' ')
+            print_colored_text("Join room (8)", 'light_red', end='\n')
+
     def mainLoop(self):
         choice = "0"
         # log file initialization
         logging.basicConfig(filename="peer.log", level=logging.INFO)
         # as long as the user is not logged out, asks to select an option in the menu
         while choice != "3":
-            choice = get_input("\
-Choose: \n\
-Create account: 1\n\
-Login: 2\n\
-Logout: 3\n\
-Online Users: 4\n\
-Private Chat: 5\n\
-Create a chat room: 6\n\
-List Chat rooms: 7\n\
-Join a chat room: 8\n", 'purple')
+            self.print_coices_colored()
+            choice = get_input()
 
             if choice == "1":
                 username = inputUsername()
@@ -123,15 +125,15 @@ Join a chat room: 8\n", 'purple')
                 elif response == "join-exist":
                     print_colored_text("choose another username or login...", 'red')
 
-            elif choice is "2" and not self.isOnline:
+            elif choice == "2" and not self.isOnline:
                 username = inputUsername()
                 password = inputPassword()
                 peerServerHost = get_hostname()
-                peerServerPort = inputPortNumber()
+                peerServerPort = find_available_port(peerServerHost, 10000, 20000)
                 
                 status, payload = login(username, password, f"{peerServerHost}:{peerServerPort}", self.tcpClientSocket)
                 # is user logs in successfully, peer variables are set
-                if status is 1:
+                if status == 1:
                     print_colored_text("Logged in successfully...", 'green')
                     self.isOnline = True
                     self.loginCredentials = (username, password)
@@ -141,15 +143,15 @@ Join a chat room: 8\n", 'purple')
                     self.peerServer.start()
                     # hello message is sent to registry
                     self.sendHelloMessage(payload)
-                elif status is 0:
+                elif status == 0:
                     print_colored_text("Account does not exist...", 'red')
-                elif status is 2:
+                elif status == 2:
                     print_colored_text("Account is already online...", 'red')
-                elif status is 3:
+                elif status == 3:
                     print_colored_text("Wrong password...", 'red')
             # if choice is 3 and user is logged in, then user is logged out
             # and peer variables are set, and server and client sockets are closed
-            elif choice is "3" and self.isOnline:
+            elif choice == "3" and self.isOnline:
                 self.logout(1)
                 self.isOnline = False
                 self.loginCredentials = (None, None)
@@ -159,9 +161,9 @@ Join a chat room: 8\n", 'purple')
                     self.peerClient.tcpClientSocket.close()
                 print_colored_text("Logged out successfully", 'green')
             # is peer is not logged in and exits the program
-            elif choice is "3":
+            elif choice == "3":
                 self.logout(2)
-            elif choice is "4" and self.isOnline:
+            elif choice == "4" and self.isOnline:
                 message = "LIST-USERS"
                 logging.info("Send to " + self.registryName + ":" + str(self.registryPort) + " -> " + message)
                 self.tcpClientSocket.send(message.encode())
@@ -172,12 +174,15 @@ Join a chat room: 8\n", 'purple')
                     for i in range(1, len(response)):
                         print_colored_text(response[i], 'cyan')
 
-            elif choice is "5" and self.isOnline:
+            elif choice == "5" and self.isOnline:
                 username = inputUsername()
+                while username == self.loginCredentials[0]:
+                    print_colored_text("You cannot chat with yourself...", 'red')
+                    username = inputUsername()
 
                 status, payload = self.searchUser(username)
 
-                if status is 1:
+                if status == 1:
                     print_colored_text("User is found and is online. Do you want to chat with " + username + "? (y/n)", 'yellow')
                     answer = get_input()
                     if answer == "y":
@@ -190,9 +195,9 @@ Join a chat room: 8\n", 'purple')
                         self.peerClient.join()
                     else:
                         print_colored_text("Chat request is cancelled...", 'red')
-                elif status is 2:
+                elif status == 2:
                     print_colored_text("User is not online...", 'red')
-                elif status is 3:
+                elif status == 3:
                     print_colored_text("User is not found...", 'red')
             elif choice == "OK" and self.isOnline:
                 okMessage = "OK " + self.loginCredentials[0]
@@ -253,6 +258,9 @@ Join a chat room: 8\n", 'purple')
                         while not userMessage:
                             userMessage = get_input()
                         while userMessage != ":q":
+                            clear_last_console_line()
+                            print_colored_text(self.loginCredentials[0]+": ", 'green', end='')
+                            print(format_text(userMessage))
                             broadcast_message(self, userMessage)
                             userMessage = get_input()
                             while not userMessage:
