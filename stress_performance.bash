@@ -1,7 +1,7 @@
 #!/bin/bash
 
-X=100
-Y=10
+X=10
+Y=2
 
 declare -a times
 
