@@ -7,6 +7,8 @@ authors = ["Mustafa U. Abdelrahman <mustafausama@outlook.com>"]
 [tool.poetry.dependencies]
 python = "^3.10"
 pymongo = "^4.6.1"
+pytest = "^7.4.4"
+pytest-cov = "^4.1.0"
 
 
 [build-system]

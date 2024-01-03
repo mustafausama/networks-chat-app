@@ -65,17 +65,50 @@ class PeerMain:
 
     # peer initializations
     def __init__(self):
-        self.registryName, self.registryPort = inputRegAddress("Enter the registry TCP address (host:port): ")
-        self.registryPort = 15600
+        try:
+            with open("tcp.config", "r") as f:
+                regAddress = f.readline()
+                if regAddress:
+                    print_colored_text("Registry tcp address is read from tcp.config file...", 'green')
+                    regAddress = regAddress.strip().split(":")
+                    self.registryName, self.registryPort = regAddress[0], int(regAddress[1])
+                else:
+                    raise FileNotFoundError()
+        except FileNotFoundError:
+            self.registryName, self.registryPort = inputRegAddress("Enter the registry TCP address (host:port): ")
+
         self.tcpClientSocket = socket(AF_INET, SOCK_STREAM)
         self.tcpClientSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        print("TCP connecting to " + self.registryName + ":" + str(self.registryPort))
         self.tcpClientSocket.connect((self.registryName,self.registryPort))
         # self.tcpClientSocket.listen(5)
 
         self.udpClientSocket = socket(AF_INET, SOCK_DGRAM)
         self.udpClientSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 
-        _, self.registryUDPPort = inputRegAddress("Enter the registry UDP address (host:port): ")
+
+        try:
+            with open("udp.config", "r") as f:
+                regAddress = f.readline()
+                if regAddress:
+                    print_colored_text("Registry udp address is read from udp.config file...", 'green')
+                    regAddress = regAddress.strip().split(":")
+                    _, self.registryUDPPort = regAddress[0], int(regAddress[1])
+                else:
+                    raise FileNotFoundError()
+        except FileNotFoundError:
+            _, self.registryUDPPort = inputRegAddress("Enter the registry UDP address (host:port): ")
+
+        print("UDP Saving registry address - " + self.registryName + ":" + str(self.registryUDPPort))
+
+
+        try:
+            with open("testing_flag.txt", "r") as f:
+                self.testing = True
+        except FileNotFoundError:
+            self.testing = False
+
+        # _, self.registryUDPPort = inputRegAddress("Enter the registry UDP address (host:port): ")
         self.loginCredentials = (None, None)
         self.isOnline = False
         self.peerServerPort = None
@@ -112,6 +145,9 @@ class PeerMain:
         # log file initialization
         logging.basicConfig(filename="peer.log", level=logging.INFO)
         # as long as the user is not logged out, asks to select an option in the menu
+        if self.testing:
+            while True:
+                pass
         while choice != "3":
             self.print_coices_colored()
             choice = get_input()
