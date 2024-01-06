@@ -35,11 +35,19 @@ You can test the application by running the command
 You can see a detailed report of the tests by running the command  
 `poetry run pytest -v tests/`
 ## Stress and performance testing
+### Stress testing using bash
 You can run the stress testing by simply running the command `./stress_performance.bash` after giving the file execution permissions using `chmod +x ./stress_performance.bash`.  
 In order to run the stress testing, you need to have a bash terminal with the command bc.
 You can install it in ubuntu by running `sudo apt-get install bc`
 If you are on windows, you need to use a bash-based terminal such as **git bash**.  
 If you encounter the error where pkill is not avaialable on windows, you will need to use `taskkill` instead to kill all the processes of `"chat/peer.py"`.
+### Stress testing using python unittest
+You can run the stress testing python script by running the file stress.py using python's unittest module.  
+To do so, run the following command `python -m unittest tests/stress.py`.  
+- If you have poetry, you can run the application without activating poetry shell by using:
+   `poetry run python -m unittest tests/stress.py`
+
+
 
 # Running the applications
 ## Activating the virtual environment
