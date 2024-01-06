@@ -66,15 +66,19 @@ class PeerMain:
     # peer initializations
     def __init__(self):
         try:
-            with open("tcp.config", "r") as f:
-                regAddress = f.readline()
-                if regAddress:
-                    print_colored_text("Registry tcp address is read from tcp.config file...", 'green')
-                    regAddress = regAddress.strip().split(":")
-                    self.registryName, self.registryPort = regAddress[0], int(regAddress[1])
-                else:
-                    raise FileNotFoundError()
-        except FileNotFoundError:
+            import os
+            if os.path.exists("tcp.config"):
+                with open("tcp.config", "r") as f:
+                    regAddress = f.readline()
+                    if regAddress:
+                        print_colored_text("Registry tcp address is read from tcp.config file...", 'green')
+                        regAddress = regAddress.strip().split(":")
+                        self.registryName, self.registryPort = regAddress[0], int(regAddress[1])
+                    else:
+                        raise Exception()
+            else:
+                raise FileNotFoundError()
+        except:
             self.registryName, self.registryPort = inputRegAddress("Enter the registry TCP address (host:port): ")
 
         self.tcpClientSocket = socket(AF_INET, SOCK_STREAM)
@@ -88,24 +92,30 @@ class PeerMain:
 
 
         try:
-            with open("udp.config", "r") as f:
-                regAddress = f.readline()
-                if regAddress:
-                    print_colored_text("Registry udp address is read from udp.config file...", 'green')
-                    regAddress = regAddress.strip().split(":")
-                    _, self.registryUDPPort = regAddress[0], int(regAddress[1])
-                else:
-                    raise FileNotFoundError()
-        except FileNotFoundError:
+            if os.path.exists("udp.config"):
+                with open("udp.config", "r") as f:
+                    regAddress = f.readline()
+                    if regAddress:
+                        print_colored_text("Registry udp address is read from udp.config file...", 'green')
+                        regAddress = regAddress.strip().split(":")
+                        _, self.registryUDPPort = regAddress[0], int(regAddress[1])
+                    else:
+                        raise Exception()
+            else:
+                raise FileNotFoundError()
+        except:
             _, self.registryUDPPort = inputRegAddress("Enter the registry UDP address (host:port): ")
 
         print("UDP Saving registry address - " + self.registryName + ":" + str(self.registryUDPPort))
 
 
         try:
-            with open("testing_flag.txt", "r") as f:
-                self.testing = True
-        except FileNotFoundError:
+            if os.path.exists("testing_flag.txt"):
+                with open("testing_flag.txt", "r") as f:
+                    self.testing = True
+            else:
+                self.testing = False
+        except:
             self.testing = False
 
         # _, self.registryUDPPort = inputRegAddress("Enter the registry UDP address (host:port): ")

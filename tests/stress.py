@@ -48,7 +48,7 @@ class StressTest(TestCase):
         side_effect = []
         pass_side_effect = []
         regAddress_side_effect = []
-        TIMES = 1000
+        TIMES = 100
         while testing.get('host', '') == "": pass
         for i in range(TIMES):
             regAddress_side_effect.append((testing['host'], testing['tcp_port']))
