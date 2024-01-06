@@ -316,7 +316,8 @@ class PeerMain:
                         print_colored_text("You are already in this chat room...", 'red')
 
             elif choice == "CANCEL":
-                self.timer.cancel()
+                if self.timer:
+                    self.timer.cancel()
                 break
             else:
                 print_colored_text("Please select a valid option...", 'red')

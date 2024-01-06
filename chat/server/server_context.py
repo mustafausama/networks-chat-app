@@ -50,13 +50,22 @@ class ServerContext:
         print("Starting TCP server at " + self.host + ":" + str(self.tcp_port))
         print("Starting UDP server at " + self.host + ":" + str(self.udp_port))
 
-    def mainLoop(self):
+    def mainLoop(self, testing = None):
         print("Server is running...")
+        if testing is not None:
+            import threading
+            testing['registryPID'] = threading.get_native_id()
+            testing['identity'] = threading.get_ident()
+            testing['tcp_port'] = self.tcp_port
+            testing['udp_port'] = self.udp_port
+            testing['host'] = self.host
         while self.inputs:
             readable, writable, exceptional = select.select(self.inputs, [], [])
             for s in readable:
                 if s is self.tcpSocket:
                     handle_new_TCP_connection(self.tcpSocket, self)
+                    if testing is not None:
+                        testing['log'] = "New TCP connection"
                 elif s is self.udpSocket:
                     handle_UDP_message(self.udpSocket, self)
         self.tcpSocket.close()
