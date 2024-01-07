@@ -142,7 +142,7 @@ class TestPeerMain(unittest.TestCase):
 
     @patch('chat.client.peer_main.print_colored_text')
     @patch('chat.client.peer_main.get_input', side_effect=['3', 'CANCEL'])
-    def test_mainLoop_choice_2(self, mock_input, mock_print_colored_text):
+    def test_mainLoop_choice_3(self, mock_input, mock_print_colored_text):
         self.peer_main.isOnline = True
         self.peer_main.logout = Mock()
         self.peer_main.tcpClientSocket = MagicMock()
@@ -161,7 +161,7 @@ class TestPeerMain(unittest.TestCase):
 
     @patch('chat.client.peer_main.print_colored_text')
     @patch('chat.client.peer_main.get_input', side_effect=['3', 'CANCEL'])
-    def test_mainLoop_choice_3(self, mock_input, mock_print_colored_text):
+    def test_mainLoop_choice_32(self, mock_input, mock_print_colored_text):
         self.peer_main.isOnline = False
         self.peer_main.logout = Mock()
         self.peer_main.mainLoop()
@@ -170,7 +170,7 @@ class TestPeerMain(unittest.TestCase):
     @patch('chat.client.peer_main.print_colored_text')
     @patch('chat.client.peer_main.inputUsername')
     @patch('chat.client.peer_main.get_input', side_effect=['5', 'n', 'CANCEL'])
-    def test_mainLoop_choice_2(self, mock_input, mock_inputUsername, mock_print_colored_text):
+    def test_mainLoop_choice_5(self, mock_input, mock_inputUsername, mock_print_colored_text):
         mock_inputUsername.return_value = 'username'
         self.peer_main.isOnline = True
         self.peer_main.searchUser = Mock(return_value=['1', '2'])
@@ -181,7 +181,7 @@ class TestPeerMain(unittest.TestCase):
     @patch('chat.client.peer_main.print_colored_text')
     @patch('chat.client.peer_main.PeerClient')
     @patch('chat.client.peer_main.get_input', side_effect=['OK', 'CANCEL'])
-    def test_mainLoop_choice_2(self, mock_input, mock_PeerClient, mock_print_colored_text):
+    def test_mainLoop_choice_OK(self, mock_input, mock_PeerClient, mock_print_colored_text):
         self.peer_main.isOnline = True
         self.peer_main.loginCredentials = ['username']
         self.peer_main.peerServer = MagicMock()
@@ -194,7 +194,7 @@ class TestPeerMain(unittest.TestCase):
 
     @patch('chat.client.peer_main.print_colored_text')
     @patch('chat.client.peer_main.get_input', side_effect=['REJECT', 'CANCEL'])
-    def test_mainLoop_choice_2(self, mock_input, mock_print_colored_text):
+    def test_mainLoop_choice_REJECT(self, mock_input, mock_print_colored_text):
         self.peer_main.isOnline = True
         self.peer_main.peerServer = MagicMock()
         self.peer_main.peerServer.connectedPeerIP = '122.12.12.12'
@@ -206,7 +206,7 @@ class TestPeerMain(unittest.TestCase):
 
     @patch('chat.client.peer_main.print_colored_text')
     @patch('chat.client.peer_main.get_input', side_effect=['6', 'room_name', 'CANCEL'])
-    def test_mainLoop_choice_2(self, mock_input, mock_print_colored_text):
+    def test_mainLoop_choice_6(self, mock_input, mock_print_colored_text):
         self.peer_main.isOnline = True
         self.peer_main.isInChatRoom = False
         self.peer_main.tcpClientSocket = MagicMock()
@@ -218,7 +218,7 @@ class TestPeerMain(unittest.TestCase):
 
     @patch('chat.client.peer_main.print_colored_text')
     @patch('chat.client.peer_main.get_input', side_effect=['7', 'CANCEL'])
-    def test_mainLoop_choice_2(self, mock_input, mock_print_colored_text):
+    def test_mainLoop_choice_7(self, mock_input, mock_print_colored_text):
         self.peer_main.isOnline = True
         self.peer_main.tcpClientSocket = MagicMock()
         self.peer_main.tcpClientSocket.send = Mock()
@@ -231,7 +231,7 @@ class TestPeerMain(unittest.TestCase):
     @patch('chat.client.peer_main.PeerRoom')
     @patch('chat.client.peer_main.print_colored_text')
     @patch('chat.client.peer_main.get_input', side_effect=['8', 'room_name', ':q', 'CANCEL'])
-    def test_mainLoop_choice_2(self, mock_input, mock_print_colored_text, mock_PeerRoom):
+    def test_mainLoop_choice_8(self, mock_input, mock_print_colored_text, mock_PeerRoom):
         self.peer_main.isOnline = True
         self.peer_main.isInChatRoom = False
         self.peer_main.tcpClientSocket = MagicMock()
