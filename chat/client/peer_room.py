@@ -6,49 +6,45 @@ import threading
 class PeerRoom:
     def __init__(self, main_context):
         self.stop = False
-        self.roomTCPThread = threading.Thread(target=self.handle_tcp_chat_room, args=(main_context,))
-        self.roomUDPThread = threading.Thread(target=self.handle_udp_chat_room, args=(main_context,))
+        self.roomThread = threading.Thread(target=self.handle_room, args=(main_context,))
 
-    def handle_tcp_chat_room(self, main_context):
-        while True and not self.stop:
-            try:
-                try:
-                    message = receiveTCPMessage(main_context.tcpClientSocket).split()
-                except:
-                    logging.error("TCP Client error")
-                    break
-                if(message[0] == 'room-left'):
-                    print_colored_text("You left the room.", 'red')
-                    break
-                logging.info("Received from " + str(main_context.tcpClientSocket) + " -> " + " ".join(message))
-                if not message:
-                    continue
-                if message[0] == "JOINED":
-                    print_colored_text(message[1] + " joined the room from " + str((message[2].split(":")[0], int(message[2].split(":")[1]))) + ".", 'green')
-                    main_context.online_room_peers[message[1]] = (message[2].split(":")[0], int(message[2].split(":")[1]))
-                elif message[0] == "LEFT":
-                    if message[1] in main_context.online_room_peers:
-                        del main_context.online_room_peers[message[1]]
-                    print_colored_text(message[1] + " left the room.", 'yellow')
-            except OSError as oErr:
-                logging.error("OSError: {0}".format(oErr))
-
-    def handle_udp_chat_room(self, main_context):
-        inputs = [main_context.udpClientSocket]
+    def handle_room(self, main_context):
+        inputs = [main_context.tcpClientSocket, main_context.udpClientSocket]
         while inputs and not self.stop:
             try:
-                readable, writable, exceptional = select.select(inputs, [], [], 0.1)
+                readable, writable, exceptional = select.select(inputs, [], [], 0.01)
             except:
-                logging.error("UDP Client error")
+                logging.error("Client error")
                 break
             for s in readable:
-                if s is main_context.udpClientSocket:
+                if s is main_context.tcpClientSocket:
+                    try:
+                        message = receiveTCPMessage(main_context.tcpClientSocket).split()
+                    except:
+                        logging.error("TCP Client error")
+                        break
+                    if not message or len(message) == 0: continue
+                    if(message[0] == 'room-left'):
+                        print_colored_text("You left the room.", 'red')
+                        break
+                    logging.info("Received from " + str(main_context.tcpClientSocket) + " -> " + " ".join(message))
+                    if not message:
+                        continue
+                    if message[0] == "JOINED":
+                        print_colored_text(message[1] + " joined the room from " + str((message[2].split(":")[0], int(message[2].split(":")[1]))) + ".", 'green')
+                        main_context.online_room_peers[message[1]] = (message[2].split(":")[0], int(message[2].split(":")[1]))
+                    elif message[0] == "LEFT":
+                        if message[1] in main_context.online_room_peers:
+                            del main_context.online_room_peers[message[1]]
+                        print_colored_text(message[1] + " left the room.", 'yellow')
+                elif s is main_context.udpClientSocket:
                     try:
                         message, clientAddress = main_context.udpClientSocket.recvfrom(1024)
                     except:
                         logging.error("UDP Client error")
                         break
                     temp = message.decode().split()
+                    if not temp or len(temp) == 0: continue
                     username = temp[0]
                     message_content = " ".join(temp[1:])
                     if username not in main_context.online_room_peers:
@@ -56,16 +52,12 @@ class PeerRoom:
                     print_colored_text(username + ': ', 'cyan', end='')
                     print(format_text(message_content))
 
-    def start_threads(self):
-        self.roomTCPThread.start()
-        self.roomUDPThread.start()
+    def start_thread(self):
+        self.roomThread.start()
 
-    def stop_threads(self):
+    def stop_thread(self):
         self.stop = True
-        self.roomTCPThread.join()
-        self.roomUDPThread.join()
-
-
+        self.roomThread.join()
 
 def broadcast_message(main_context, message):
     for username, address in main_context.online_room_peers.items():

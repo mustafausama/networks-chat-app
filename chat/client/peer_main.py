@@ -280,7 +280,7 @@ class PeerMain:
                     self.tcpClientSocket.send(message.encode())
                     response = self.tcpClientSocket.recv(1024).decode().split()
                     room = PeerRoom(self)
-                    room.start_threads()
+                    room.start_thread()
                     if response[0] == "room-joined":
                         self.isInChatRoom = True
                         # add the peers in the chat room to the online_room_peers
@@ -303,7 +303,7 @@ class PeerMain:
                                 userMessage = get_input()
                         # send LEAVE-ROOM
                         self.tcpClientSocket.send(f"LEAVE-ROOM {room_name}".encode())
-                        room.stop_threads()
+                        room.stop_thread()
                         self.isInChatRoom = False
                         self.online_room_peers.clear()
                         print_colored_text("Left "+room_name+" chat room...", 'yellow')
