@@ -31,7 +31,7 @@ If you have docker installed on your system. You can run the following command a
 # Testing the application
 ## Unit and integration testing
 You can test the application by running the command  
-`python -m unittest discover tests`
+`python -m unittest discover -b tests`
 You can see a detailed report of the tests by running the command  
 `poetry run pytest -v tests/`
 ## Stress and performance testing
