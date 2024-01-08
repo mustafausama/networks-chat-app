@@ -12,7 +12,7 @@ If you have docker installed on your system. You can run the following command a
 ## Insatlling the Application
 ### Option 1: Using poetry
 1. Install the dependencies, install the project, create the venv  
-`potry install`  
+`poetry install`  
 
 2. Activate the venv in the current terminal 
 `poetry shell`

@@ -7,7 +7,7 @@ db = DB()
 
 
 class UserAuth:
-    PEPPER = "pepperonipizza"
+    PEPPER = "SECRETPEPPER"
 
     @staticmethod
     def _hash_password(password, salt):
